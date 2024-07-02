@@ -245,7 +245,7 @@ export function BuildMongestRaResolver<
     @InterceptorFromOptions(endpointOptions.getMany?.interceptor)
     async getMany(
       @Info() info: GraphQLResolveInfo,
-      @Args() args?: GetManyArgs,
+      @Args({ type: () => GetManyArgs }) args?: any,
     ): Promise<DocOrProjectedDoc<T, any>[]> {
       // console.log('info', JSON.stringify(info.fieldNodes[0]?.selectionSet, null, 2));
       const projection = getProjectionFromGraphQlInfo(
@@ -274,7 +274,7 @@ export function BuildMongestRaResolver<
     )
     @GuardFromOptions(endpointOptions.getMany?.guard)
     @InterceptorFromOptions(endpointOptions.getMany?.interceptor)
-    async getManyMeta(@Args() args?: GetManyArgs): Promise<ListMetadata> {
+    async getManyMeta(@Args({ type: () => GetManyArgs }) args?: any): Promise<ListMetadata> {
       const mongoFilter = await raFilterToMongoFilter(args?.filter);
       const count = await this.service.countDocuments(mongoFilter);
       return new ListMetadata(count);
