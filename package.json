@@ -10,7 +10,6 @@
   "scripts": {
     "build": "rm -fr ./dist && tsc -p tsconfig-build.json",
     "lint": "eslint src tests",
-    "prepare": "npm run build",
     "test": "ts-mocha --type-check --paths -p ./tsconfig.json tests/**/*.test.ts",
     "test-watch": "npm test -- -w --watch-extensions ts",
     "test-server": "ts-node ./tests/test-server.ts"

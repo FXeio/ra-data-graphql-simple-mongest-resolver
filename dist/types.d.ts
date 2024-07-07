@@ -1,0 +1,13 @@
+import { CanActivate, Type } from '@nestjs/common';
+import { ObjectId } from 'mongodb';
+export declare type EntityPayload = object;
+export declare type PartialRecord<K extends string, T> = Partial<Record<K, T>>;
+export declare type Nullable<T> = T | null | undefined;
+export declare type ValueOf<T extends object> = T[keyof T];
+export declare type AbstractType<T = any> = abstract new (...args: any[]) => T;
+export declare type ObjectIdHex = string;
+export declare type ItemOrArray<T> = T | T[];
+export declare type InstanceOrClass<T> = T | Type<T>;
+export declare type NestGuard = CanActivate;
+export declare type NestGuardClassOrInstance = InstanceOrClass<NestGuard>;
+export declare type ExtractIdType<E extends EntityPayload> = '_id' extends keyof E ? E['_id'] : ObjectId;
