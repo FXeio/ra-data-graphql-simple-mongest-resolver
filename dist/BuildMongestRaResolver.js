@@ -107,19 +107,25 @@ function BuildMongestRaResolver(entity, options = {}) {
             this.service = service;
         }
         async getOne(info, id) {
+            var _a, _b, _c, _d;
+            await ((_b = (_a = endpointOptions.getOne) === null || _a === void 0 ? void 0 : _a.hookPre) === null || _b === void 0 ? void 0 : _b.call(_a, info, id));
             const projection = (0, getProjectionFromGraphQlInfo_1.getProjectionFromGraphQlInfo)(info, virtualFieldDeps, discriminatorRequiredFields);
             const doc = await this.service.findById(id, { projection });
             if (!doc) {
                 throw new common_1.NotFoundException();
             }
-            return doc;
+            return ((await ((_d = (_c = endpointOptions.getOne) === null || _c === void 0 ? void 0 : _c.hookPost) === null || _d === void 0 ? void 0 : _d.call(_c, info, id, doc))) ||
+                doc);
         }
         async getMany(info, args) {
+            var _a, _b, _c, _d;
+            await ((_b = (_a = endpointOptions.getMany) === null || _a === void 0 ? void 0 : _a.hookPre) === null || _b === void 0 ? void 0 : _b.call(_a, info, args));
             const projection = (0, getProjectionFromGraphQlInfo_1.getProjectionFromGraphQlInfo)(info, virtualFieldDeps, discriminatorRequiredFields);
             const mongoFilter = await raFilterToMongoFilter(args === null || args === void 0 ? void 0 : args.filter);
             const queryOptions = Object.assign(Object.assign({}, (await GetManyArgsToFindManyOptions(args))), { projection });
             const docs = await this.service.find(mongoFilter, queryOptions);
-            return docs;
+            return ((await ((_d = (_c = endpointOptions.getMany) === null || _c === void 0 ? void 0 : _c.hookPost) === null || _d === void 0 ? void 0 : _d.call(_c, info, args, docs))) ||
+                docs);
         }
         async getManyMeta(args) {
             const mongoFilter = await raFilterToMongoFilter(args === null || args === void 0 ? void 0 : args.filter);
@@ -127,25 +133,31 @@ function BuildMongestRaResolver(entity, options = {}) {
             return new pagination_1.ListMetadata(count);
         }
         async create(doc) {
-            return await this.service.insert(doc);
+            var _a, _b, _c, _d;
+            const newDoc = await this.service.insert((await ((_b = (_a = endpointOptions.create) === null || _a === void 0 ? void 0 : _a.hookPre) === null || _b === void 0 ? void 0 : _b.call(_a, doc))) || doc);
+            return (await ((_d = (_c = endpointOptions.create) === null || _c === void 0 ? void 0 : _c.hookPost) === null || _d === void 0 ? void 0 : _d.call(_c, newDoc))) || newDoc;
         }
         async update(info, id, doc) {
+            var _a, _b, _c, _d;
             if (!id) {
                 throw Error(`field 'id' missing in update's args: ${JSON.stringify(doc)}`);
             }
+            await ((_b = (_a = endpointOptions.update) === null || _a === void 0 ? void 0 : _a.hookPre) === null || _b === void 0 ? void 0 : _b.call(_a, info, id, doc));
             const projection = (0, getProjectionFromGraphQlInfo_1.getProjectionFromGraphQlInfo)(info, virtualFieldDeps, discriminatorRequiredFields);
             const newDoc = await this.service.findByIdAndUpdate(id, doc, { new: true, projection });
             if (!newDoc) {
                 throw new common_1.NotFoundException(`Doc ${nameSingularForm} with id ${id} not found`);
             }
-            return newDoc;
+            return (await ((_d = (_c = endpointOptions.update) === null || _c === void 0 ? void 0 : _c.hookPost) === null || _d === void 0 ? void 0 : _d.call(_c, info, id, newDoc))) || newDoc;
         }
         async delete(id) {
+            var _a, _b, _c, _d;
+            await ((_b = (_a = endpointOptions.delete) === null || _a === void 0 ? void 0 : _a.hookPre) === null || _b === void 0 ? void 0 : _b.call(_a, id));
             const oldDoc = await this.service.findByIdAndDelete(id);
             if (!oldDoc) {
                 throw new common_1.NotFoundException(`Doc ${nameSingularForm} with id ${String(id)} not found`);
             }
-            return oldDoc;
+            return (await ((_d = (_c = endpointOptions.delete) === null || _c === void 0 ? void 0 : _c.hookPost) === null || _d === void 0 ? void 0 : _d.call(_c, oldDoc))) || oldDoc;
         }
         async id(parent) {
             return parent._id;
