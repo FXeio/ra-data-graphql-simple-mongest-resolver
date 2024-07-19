@@ -75,19 +75,40 @@ export interface MongestRaResolverOptions<T extends EntityPayload, F extends Cus
 
   // Endpoint options.
   endpoints?: {
-    getOne?: ResolverEndpointDefaultOptions;
-    getMany?: ResolverEndpointDefaultOptions;
+    getOne?: ResolverEndpointDefaultOptions & {
+      hookPre?: (info: GraphQLResolveInfo, id: ExtractIdType<T>) => Promise<void>;
+      hookPost?: (
+        info: GraphQLResolveInfo,
+        id: ExtractIdType<T>,
+        doc: DocOrProjectedDoc<T, any>,
+      ) => Promise<void | DocOrProjectedDoc<T, any>>;
+    };
+    getMany?: ResolverEndpointDefaultOptions & {
+      hookPre?: (info: GraphQLResolveInfo, args: GetManyArgs<T, F>) => Promise<void>;
+      hookPost?: (
+        info: GraphQLResolveInfo,
+        args: GetManyArgs<T, F>,
+        docs: DocOrProjectedDoc<T, any>[],
+      ) => Promise<void | DocOrProjectedDoc<T, any>[]>;
+    };
     create?: ResolverEndpointDefaultOptions & {
       args?:
         | Type<EntityPayload> // Provide your own ArgsType graphql class
         | ArgsOptions; // or let mongest generate it from your entity.
+      hookPre?: (doc: Partial<T>) => Promise<void | Partial<T>>;
+      hookPost?: (newDoc: T) => Promise<void | T>;
     };
     update?: ResolverEndpointDefaultOptions & {
       args?:
         | Type<{ id: unknown } & EntityPayload> // Provide your own ArgsType graphql class
         | ArgsOptions; // or let mongest generate it from your entity.
+      hookPre?: (info: GraphQLResolveInfo, id: ExtractIdType<T>, doc: Partial<T>) => Promise<void>;
+      hookPost?: (info: GraphQLResolveInfo, id: ExtractIdType<T>, newDoc: T) => Promise<void | T>;
     };
-    delete?: ResolverEndpointDefaultOptions;
+    delete?: ResolverEndpointDefaultOptions & {
+      hookPre?: (id: ExtractIdType<T>) => Promise<void>;
+      hookPost?: (oldDoc: T) => Promise<void | T>;
+    };
   };
 }
 
@@ -223,6 +244,7 @@ export function BuildMongestRaResolver<
       @Info() info: GraphQLResolveInfo,
       @Args('id', { type: () => ID }) id: IdType,
     ): Promise<DocOrProjectedDoc<T, any>> {
+      await endpointOptions.getOne?.hookPre?.(info, id);
       const projection = getProjectionFromGraphQlInfo(
         info,
         virtualFieldDeps,
@@ -232,7 +254,10 @@ export function BuildMongestRaResolver<
       if (!doc) {
         throw new NotFoundException();
       }
-      return doc as DocOrProjectedDoc<T, any>;
+      return (
+        (await endpointOptions.getOne?.hookPost?.(info, id, doc)) ||
+        (doc as DocOrProjectedDoc<T, any>)
+      );
     }
 
     @DecorateIf(
@@ -248,6 +273,7 @@ export function BuildMongestRaResolver<
       @Args({ type: () => GetManyArgs }) args?: any,
     ): Promise<DocOrProjectedDoc<T, any>[]> {
       // console.log('info', JSON.stringify(info.fieldNodes[0]?.selectionSet, null, 2));
+      await endpointOptions.getMany?.hookPre?.(info, args);
       const projection = getProjectionFromGraphQlInfo(
         info,
         virtualFieldDeps,
@@ -263,7 +289,10 @@ export function BuildMongestRaResolver<
       // console.log('projection', projection);
       const docs = await this.service.find(mongoFilter, queryOptions);
       // console.log('docs', docs);
-      return docs as DocOrProjectedDoc<T, any>[];
+      return (
+        (await endpointOptions.getMany?.hookPost?.(info, args, docs)) ||
+        (docs as DocOrProjectedDoc<T, any>[])
+      );
     }
 
     @DecorateIf(
@@ -289,7 +318,10 @@ export function BuildMongestRaResolver<
     @GuardFromOptions(endpointOptions.create?.guard)
     @InterceptorFromOptions(endpointOptions.create?.interceptor)
     async create(@Args({ type: () => CreateArgsClass }) doc: Partial<T>): Promise<T> {
-      return await this.service.insert(doc);
+      const newDoc = await this.service.insert(
+        (await endpointOptions.create?.hookPre?.(doc)) || doc,
+      );
+      return (await endpointOptions.create?.hookPost?.(newDoc)) || newDoc;
     }
 
     @DecorateIf(
@@ -308,6 +340,7 @@ export function BuildMongestRaResolver<
       if (!id) {
         throw Error(`field 'id' missing in update's args: ${JSON.stringify(doc)}`);
       }
+      await endpointOptions.update?.hookPre?.(info, id, doc);
       const projection = getProjectionFromGraphQlInfo(
         info,
         virtualFieldDeps,
@@ -317,7 +350,7 @@ export function BuildMongestRaResolver<
       if (!newDoc) {
         throw new NotFoundException(`Doc ${nameSingularForm} with id ${id} not found`);
       }
-      return newDoc as T;
+      return (await endpointOptions.update?.hookPost?.(info, id, newDoc as T)) || (newDoc as T);
     }
 
     @DecorateIf(
@@ -329,11 +362,12 @@ export function BuildMongestRaResolver<
     @GuardFromOptions(endpointOptions.delete?.guard)
     @InterceptorFromOptions(endpointOptions.delete?.interceptor)
     async delete(@Args('id', { type: () => ID }) id: IdType): Promise<T> {
+      await endpointOptions.delete?.hookPre?.(id);
       const oldDoc = await this.service.findByIdAndDelete(id);
       if (!oldDoc) {
         throw new NotFoundException(`Doc ${nameSingularForm} with id ${String(id)} not found`);
       }
-      return oldDoc;
+      return (await endpointOptions.delete?.hookPost?.(oldDoc)) || oldDoc;
     }
 
     @ResolveField(() => ID)
