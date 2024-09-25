@@ -158,7 +158,7 @@ export function BuildMongestRaResolver<
   T extends EntityPayload,
   F extends CustomFilter,
   Service extends MongestService<T>,
->(entity: Type<T>, options: MongestRaResolverOptions<T, F> = {}): Type<T & { service: Service }> {
+>(entity: Type<T>, options: MongestRaResolverOptions<T, F> = {}): Type<{ service: Service }> {
   type IdType = ExtractIdType<T>;
 
   const filterBuilder = options.filter?.filterBuilder;

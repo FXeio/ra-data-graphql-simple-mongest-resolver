@@ -54,7 +54,7 @@ export declare type GetManyArgs<T extends EntityPayload, F extends object | unde
     filter?: F;
 };
 export declare function BuildGetManyArgs<T extends EntityPayload, F extends CustomFilter>(filterOptions: MongestRaResolverOptions<T, F>['filter'] | undefined): Type<GetManyArgs<T, F>>;
-export declare function BuildMongestRaResolver<T extends EntityPayload, F extends CustomFilter, Service extends MongestService<T>>(entity: Type<T>, options?: MongestRaResolverOptions<T, F>): Type<T & {
+export declare function BuildMongestRaResolver<T extends EntityPayload, F extends CustomFilter, Service extends MongestService<T>>(entity: Type<T>, options?: MongestRaResolverOptions<T, F>): Type<{
     service: Service;
 }>;
 export {};
