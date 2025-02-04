@@ -55,7 +55,9 @@ const raPaginationArgsToPaginationArgs = (args) => {
     return Object.assign({ skip: (args.page || 0) * (args.perPage || 1), limit: args.perPage }, (args.sortField
         ? {
             sort: {
-                [args.sortField]: args.sortOrder ? raSortOrderToMongoSortDirection(args.sortOrder) : 1,
+                [args.sortField === 'id' ? '_id' : args.sortField]: args.sortOrder
+                    ? raSortOrderToMongoSortDirection(args.sortOrder)
+                    : 1,
             },
         }
         : {}));

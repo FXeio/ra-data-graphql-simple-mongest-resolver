@@ -52,7 +52,9 @@ export const raPaginationArgsToPaginationArgs = <T extends EntityPayload>(
     ...(args.sortField
       ? {
           sort: {
-            [args.sortField]: args.sortOrder ? raSortOrderToMongoSortDirection(args.sortOrder) : 1,
+            [args.sortField === 'id' ? '_id' : args.sortField]: args.sortOrder
+              ? raSortOrderToMongoSortDirection(args.sortOrder)
+              : 1,
           } as Partial<Record<keyof T, SortDirection>>,
         }
       : {}),
